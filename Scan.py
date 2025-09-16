@@ -1,5 +1,6 @@
+from General import *
+
 import os
-from General import log_action, sec_to_timecode
 import subprocess
 import json
 

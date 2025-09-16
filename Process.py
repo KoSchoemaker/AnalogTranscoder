@@ -1,6 +1,12 @@
-from General import log_action, sec_to_timecode, create_filename
+from General import *
 import ffmpeg
 
+if test_mode:
+    crf_value = 26
+    preset_mode = 'ultrafast'
+else:
+    crf_value = 26
+    preset_mode = 'ultrafast'
 
 def process_video(input_filepath, begin, end, output_filename):
     kwargs = {}
