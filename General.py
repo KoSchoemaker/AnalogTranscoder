@@ -1,4 +1,3 @@
-dry_run = False
 test_mode = True  # low and fast output settings
 
 def sec_to_timecode(sec: float) -> str:
