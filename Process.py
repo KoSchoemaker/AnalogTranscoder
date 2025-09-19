@@ -1,37 +1,52 @@
 from General import *
+from Settings import Settings
 import ffmpeg
+import os
 
 
 class Process:
-    def __init__(self, crf_value: int, preset_mode: str):
-        self.crf_value = crf_value
-        self.preset_mode = preset_mode
+    def __init__(self, settings: Settings):
+        self.settings = settings
 
-    def process_video(self, input_filepath: str, output_filename: str, begin=None, end=None, dry_run=False):
+    # Takes output_file_dict <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
+    def run_batch(self, output_file_dict):
+        for input_path, item in output_file_dict.items():
+            for output_path, details in item.items():
+                if os.path.isfile(output_path):
+                    log_action(f'{output_path} already exists, skipping')
+                    continue
+                self.process_video(input_path, output_path, details["start_t"], details["end_t"])
+
+    def process_video(self, input_filepath: str, output_filepath: str, begin=None, end=None):
         kwargs = {}
         if begin is not None:
             kwargs['ss'] = begin
         if end is not None:
             kwargs['to'] = end
 
-        if dry_run == False:
-            process = (
-                ffmpeg
-                .input(input_filepath, **kwargs)
-                .output(
-                    output_filename,
-                    vf='yadif,crop=iw-40:ih-32,scale=960:720',
-                    vcodec='libx264',
-                    preset=self.preset_mode,
-                    crf=self.crf_value,
-                    acodec="aac",
-                    af="aresample=async=1000",
-                    # avoid_negative_ts="make_zero",
-                    # reset_timestamps=1
+        if self.settings.dry_run == False:
+            try:
+                process = (
+                    ffmpeg
+                    .input(input_filepath, **kwargs)
+                    .output(
+                        output_filepath,
+                        vf='yadif,crop=iw-40:ih-32,scale=960:720',
+                        vcodec='libx264',
+                        preset=self.settings.preset_mode,
+                        crf=self.settings.crf,
+                        acodec="aac",
+                        af="aresample=async=1000",
+                        # avoid_negative_ts="make_zero",
+                        # reset_timestamps=1
+                    )
+                    .global_args('-loglevel', 'info')  # Adjust loglevel as needed
+                    .run(overwrite_output=False, capture_stdout=True, capture_stderr=True)
                 )
-                .global_args('-loglevel', 'info')  # Adjust loglevel as needed
-                .run(overwrite_output=False, capture_stdout=True, capture_stderr=True)
-            )
+            except ffmpeg.Error as e:
+                print(f"Error converting {input_filepath} into {output_filepath}: {e}")
+                print('stdout:', e.stdout.decode('utf8'))
+                print('stderr:', e.stderr.decode('utf8'))
             return process
 
     def split_videos(self, input_filepath, cuts, base_name, extension_string):

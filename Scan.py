@@ -1,25 +1,26 @@
 from General import *
 from ScanCache import ScanCache
+from Settings import Settings
 import json
 import subprocess
 import os
 
 
 class Scan:
-    def __init__(self, scan_cache: ScanCache):
+    def __init__(self, scan_cache: ScanCache, settings: Settings):
         self.scan_cache = scan_cache
-        self.extension_string = ".mp4"
+        self.settings = settings
 
     # Returns <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_scan(self, filepaths):
-        all_output_file_data = {}
+        output_file_dict = {}
         for path in filepaths:
             a_pts = self.get_packet_pts(path)
             a_cuts = self.find_discontinuities(a_pts)
             output_files = self.calculate_output(a_cuts, a_pts, path)
-            all_output_file_data[path] = output_files
+            output_file_dict[path] = output_files
 
-        return all_output_file_data
+        return output_file_dict
 
     def get_packet_pts(self, filepath):
 
@@ -72,7 +73,7 @@ class Scan:
             # first video
             if begin == None and end == None:
                 output_filename = create_filename(
-                    base_filename, addition, self.extension_string)
+                    base_filename, addition, self.settings.extension_string)
                 output_videos[output_filename] = {'start_t':None, "end_t": start_t, "duration": start_t, "gap_duration": diff}
                 begin = end_t
                 addition += 1
@@ -83,14 +84,14 @@ class Scan:
 
             # subsequent
             output_filename = create_filename(
-                base_filename, addition, self.extension_string)
+                base_filename, addition, self.settings.extension_string)
             output_videos[output_filename] = {'start_t':begin, "end_t": end, "duration": end-begin, "gap_duration": diff}
 
             begin = end_t
             addition += 1
 
         # last video
-        output_filename = create_filename(base_filename, addition, self.extension_string)
+        output_filename = create_filename(base_filename, addition, self.settings.extension_string)
         output_videos[output_filename] = {'start_t':begin, "end_t": None, "duration": pts[-1]-begin, "gap_duration": None}
 
         log_action("Video complete")
