@@ -1,27 +1,19 @@
 from General import *
-
 from WindowAction import WindowAction
 from Process import Process
 from Scan import Scan
 from Settings import Settings
 from ScanCache import ScanCache
 
-# os.makedirs(output_directory, exist_ok=True)
-# os.makedirs(cache_directory, exist_ok=True)
+from tkinter import Tk
 
-if test_mode:
-    crf_value = 26
-    preset_mode = 'ultrafast'
-else:
-    crf_value = 20
-    preset_mode = 'slow'
+root = Tk()
 
 settings = Settings()
-scan = Scan(ScanCache("pts_cache"))
+scan = Scan(ScanCache("pts_cache"), settings)
 process = Process(settings)
 
-window_action = WindowAction(settings, scan, process)
-
-window_action.generate_window()
+window_action = WindowAction(scan, process, settings)
+window_action.generate_window(root)
 
 print("Completed")

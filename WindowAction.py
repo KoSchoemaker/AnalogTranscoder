@@ -6,13 +6,14 @@ from tkinter import ttk
 
 from Process import Process
 from Scan import Scan
-from ScanCache import ScanCache
+from Settings import Settings
 
 
 class WindowAction:
-    def __init__(self, scan: Scan, process: Process):
+    def __init__(self, scan: Scan, process: Process, settings: Settings):
         self.scan = scan
         self.process = process
+        self.settings = settings
 
         self.imported_files = None
         self.output_data = None
@@ -64,40 +65,48 @@ class WindowAction:
         self.process.run_batch(self.output_data)
         log_action("Process end")
 
-    def generate_window(self):
-
-        root = Tk()
-
+    def generate_window(self, root):
         self.browse_lstbox = Listbox(root, width=100, height=15)
-        self.browse_lstbox.grid(row=0, column=1, columnspan=3)
+        self.browse_lstbox.grid(row=0, column=2)
+
+        use_cache = Checkbutton(root, text='Use Cache', var=self.settings.use_cache)
+        use_cache.grid(row=0, column=1, sticky="W")
 
         browse_button = Button(text="Browse", command=lambda: self.browse())
         browse_button.grid(row=0, column=0)
 
+
+        dry_run = Checkbutton(root, text='dryrun (no actions)', var=self.settings.dry_run)
+        dry_run.grid(row=1, column=1, sticky="W")
+
+        test_run = Checkbutton(root, text='testrun (quick actions)', var=self.settings.test_run)
+        test_run.grid(row=2, column=1, sticky="W")
+
         self.output_lstbox = Listbox(root, width=100, height=15)
-        self.output_lstbox.grid(row=1, column=1, columnspan=3)
+        self.output_lstbox.grid(row=1, column=2, rowspan=2)
 
         scan_button = Button(text="Scan", command=self.on_scan)
-        scan_button.grid(row=1, column=0)
+        scan_button.grid(row=1, column=0, rowspan=2)
 
-        settings_button = Button(
-            text="Settings", command=lambda: self.print_filenames())
-        settings_button.grid(row=2, column=0)
 
-        output_button = Button(
-            text="Output", command=lambda: self.print_filenames())
-        output_button.grid(row=2, column=1)
+        # settings_button = Button(
+        #     text="Settings", command=lambda: self.print_filenames())
+        # settings_button.grid(row=2, column=0)
 
-        process_button = Button(
-            text="Process", command=self.on_process_batch)
-        process_button.grid(row=2, column=2)
+        # output_button = Button(
+        #     text="Output", command=lambda: self.print_filenames())
+        # output_button.grid(row=2, column=1)
 
-        process_progress = ttk.Progressbar(
-            root, orient=HORIZONTAL, length=600, mode='determinate')
-        process_progress.grid(row=3, column=0, columnspan=4)
+        # process_button = Button(
+        #     text="Process", command=self.on_process)
+        # process_button.grid(row=2, column=2)
 
-        log_lstbox = Listbox(root, width=100, height=5)
-        log_lstbox.grid(row=4, column=0, columnspan=4)
+        # process_progress = ttk.Progressbar(
+        #     root, orient=HORIZONTAL, length=600, mode='determinate')
+        # process_progress.grid(row=3, column=0, columnspan=4)
+
+        # log_lstbox = Listbox(root, width=100, height=5)
+        # log_lstbox.grid(row=4, column=0, columnspan=4)
 
         mainloop()
 

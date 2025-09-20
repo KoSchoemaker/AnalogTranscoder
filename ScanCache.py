@@ -6,12 +6,14 @@ import json
 class ScanCache:
     def __init__(self, cache_directory: str):
         self.cache_directory = cache_directory
+        os.makedirs(self.cache_directory, exist_ok=True)
 
     def get_pts_from_external_cache(self, filename):
         cache_filepath = self.__get_external_cache_filepath(filename)
 
         if os.path.isfile(cache_filepath):
-            log_action(f'INFO: cache file exists for {filename}, using that ({cache_filepath})')
+            log_action(
+                f'INFO: cache file exists for {filename}, using that ({cache_filepath})')
 
             with open(os.path.join(self.cache_directory, filename) + '.json', 'r') as file:
                 return json.load(file)

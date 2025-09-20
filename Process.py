@@ -24,7 +24,7 @@ class Process:
         if end is not None:
             kwargs['to'] = end
 
-        if self.settings.dry_run == False:
+        if self.settings.get_dry_run() == False:
             try:
                 process = (
                     ffmpeg
@@ -33,8 +33,8 @@ class Process:
                         output_filepath,
                         vf='yadif,crop=iw-40:ih-32,scale=960:720',
                         vcodec='libx264',
-                        preset=self.settings.preset_mode,
-                        crf=self.settings.crf,
+                        preset=self.settings.get_preset_mode(),
+                        crf=self.settings.get_crf(),
                         acodec="aac",
                         af="aresample=async=1000",
                         # avoid_negative_ts="make_zero",
