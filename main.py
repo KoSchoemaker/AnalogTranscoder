@@ -1,5 +1,6 @@
 from General import *
 from WindowAction import WindowAction
+from WindowBuilder import WindowBuilder
 from Process import Process
 from Scan import Scan
 from Settings import Settings
@@ -14,6 +15,10 @@ scan = Scan(ScanCache("pts_cache"), settings)
 process = Process(settings)
 
 window_action = WindowAction(scan, process, settings)
-window_action.generate_window(root)
+window_builder = WindowBuilder(window_action)
+window_builder.generate_window(root)
+
+
+
 
 print("Completed")

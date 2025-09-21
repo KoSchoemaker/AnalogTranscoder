@@ -10,8 +10,9 @@ class Process:
 
     # Takes output_file_dict <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_batch(self, output_file_dict):
+        output_directory = self.settings.output_dir
         for input_path, item in output_file_dict.items():
-            for output_path, details in item.items():
+            for output_filename, details in item.items():
                 if os.path.isfile(output_path):
                     log_action(f'{output_path} already exists, skipping')
                     continue

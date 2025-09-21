@@ -7,31 +7,34 @@ from tkinter import ttk
 from Process import Process
 from Scan import Scan
 from Settings import Settings
+from Progress import Progress
 
 
 class WindowAction:
-    def __init__(self, scan: Scan, process: Process, settings: Settings):
+    def __init__(self, scan: Scan, process: Process, settings: Settings, progress: Progress):
         self.scan = scan
         self.process = process
         self.settings = settings
+        self.progress = progress
 
         self.imported_files = None
         self.output_data = None
 
-        self.browse_lstbox = None
-        self.output_lstbox = None
-
-    def browse(self):
+    def browse(self, browse_lstbox: Listbox):
         filepaths = filedialog.askopenfilenames(filetypes=[("AVI", ".avi")])
         self.imported_files = filepaths
         for path in filepaths:
             if not path.endswith(".avi"):
                 log_action(f'Skip {path}, not AVI')
                 continue
-            self.browse_lstbox.insert("end", path)
+            browse_lstbox.insert("end", path)
+
+    def set_output_directory(self):
+        filedir = filedialog.askdirectory()
+        self.settings.output_dir.set(filedir)
 
     # Takes output_file_dict <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
-    def set_scan_results(self, output_lstbox, output_file_dict):
+    def set_scan_results(self, output_lstbox: Listbox, output_file_dict):
         for input_path, item in output_file_dict.items():
             print(input_path, item)
             output_lstbox.insert(
@@ -50,11 +53,14 @@ class WindowAction:
                     formatted_string = f"-- -- GAP ({gap_dur})"
                     output_lstbox.insert("end", formatted_string)
 
-    def on_scan(self):
+    def on_scan(self, output_lstbox: Listbox):
+        if self.imported_files == None or self.imported_files == []:
+            log_action("No files selected. First browse")
+            return
         output_file_dict = self.scan.run_scan(self.imported_files)
 
         self.output_data = output_file_dict
-        self.set_scan_results(self.output_lstbox, output_file_dict)
+        self.set_scan_results(output_lstbox, output_file_dict)
 
     def on_process(self):
         if self.output_data == None:
@@ -65,50 +71,71 @@ class WindowAction:
         self.process.run_batch(self.output_data)
         log_action("Process end")
 
-    def generate_window(self, root):
-        self.browse_lstbox = Listbox(root, width=100, height=15)
-        self.browse_lstbox.grid(row=0, column=2)
+    # def generate_window(self, root):
 
-        use_cache = Checkbutton(root, text='Use Cache', var=self.settings.use_cache)
-        use_cache.grid(row=0, column=1, sticky="W")
+    #     self.build_browse(root)
+    #     self.build_scan(root)
+    #     self.build_process(root)
 
-        browse_button = Button(text="Browse", command=lambda: self.browse())
-        browse_button.grid(row=0, column=0)
+    #     mainloop()
 
+    # def build_browse(self, root):
 
-        dry_run = Checkbutton(root, text='dryrun (no actions)', var=self.settings.dry_run)
-        dry_run.grid(row=1, column=1, sticky="W")
+    #     lf_browse = LabelFrame(root, text='1: Browse files')
+    #     lf_browse.grid(column=0, row=0, padx=20, pady=20)
 
-        test_run = Checkbutton(root, text='testrun (quick actions)', var=self.settings.test_run)
-        test_run.grid(row=2, column=1, sticky="W")
+    #     self.browse_lstbox = Listbox(lf_browse, width=100, height=15)
+    #     self.browse_lstbox.grid(row=0, column=2)
 
-        self.output_lstbox = Listbox(root, width=100, height=15)
-        self.output_lstbox.grid(row=1, column=2, rowspan=2)
+    #     browse_button = Button(lf_browse, text="Browse", command=lambda: self.browse())
+    #     browse_button.grid(row=0, column=0)
 
-        scan_button = Button(text="Scan", command=self.on_scan)
-        scan_button.grid(row=1, column=0, rowspan=2)
+    # def build_scan(self, root):
 
+    #     lf_scan = LabelFrame(root, text='2: Scan selected files')
+    #     lf_scan.grid(column=0, row=1, padx=20, pady=20)
 
-        # settings_button = Button(
-        #     text="Settings", command=lambda: self.print_filenames())
-        # settings_button.grid(row=2, column=0)
+    #     settings_frame = Frame(lf_scan)
+    #     settings_frame.grid(row=0, column=1, sticky="N")
 
-        # output_button = Button(
-        #     text="Output", command=lambda: self.print_filenames())
-        # output_button.grid(row=2, column=1)
+    #     use_cache = Checkbutton(settings_frame, text='Use Cache', var=self.settings.use_cache)
+    #     use_cache.grid(row=0, column=0, sticky="W")
 
-        # process_button = Button(
-        #     text="Process", command=self.on_process)
-        # process_button.grid(row=2, column=2)
+    #     save_to_cache = Checkbutton(settings_frame, text='Save to Cache', var=self.settings.save_to_cache)
+    #     save_to_cache.grid(row=1, column=0, sticky="W")
 
-        # process_progress = ttk.Progressbar(
-        #     root, orient=HORIZONTAL, length=600, mode='determinate')
-        # process_progress.grid(row=3, column=0, columnspan=4)
+    #     dry_run = Checkbutton(settings_frame, text='dryrun (no actions)', var=self.settings.dry_run)
+    #     dry_run.grid(row=3, column=0, sticky="W")
 
-        # log_lstbox = Listbox(root, width=100, height=5)
-        # log_lstbox.grid(row=4, column=0, columnspan=4)
+    #     test_run = Checkbutton(settings_frame, text='testrun (quick actions)', var=self.settings.test_run)
+    #     test_run.grid(row=4, column=0, sticky="W")
 
-        mainloop()
+    #     self.output_lstbox = Listbox(lf_scan, width=100, height=15)
+    #     self.output_lstbox.grid(row=0, column=2)
+
+    #     scan_button = Button(lf_scan, text="Scan", command=self.on_scan)
+    #     scan_button.grid(row=0, column=0)
+
+    # def build_process(self, root):
+    #     pass
+    #     # settings_button = Button(
+    #     #     text="Settings", command=lambda: self.print_filenames())
+    #     # settings_button.grid(row=2, column=0)
+
+    #     # output_button = Button(
+    #     #     text="Output", command=lambda: self.print_filenames())
+    #     # output_button.grid(row=2, column=1)
+
+    #     # process_button = Button(
+    #     #     text="Process", command=self.on_process)
+    #     # process_button.grid(row=2, column=2)
+
+    #     # process_progress = ttk.Progressbar(
+    #     #     root, orient=HORIZONTAL, length=600, mode='determinate')
+    #     # process_progress.grid(row=3, column=0, columnspan=4)
+
+    #     # log_lstbox = Listbox(root, width=100, height=5)
+    #     # log_lstbox.grid(row=4, column=0, columnspan=4)
 
     def print_filenames(self):
         print(self.imported_files)
