@@ -25,13 +25,18 @@ class WindowAction:
         self.imported_files = filepaths
         for path in filepaths:
             if not path.endswith(".avi"):
-                log_action(f'Skip {path}, not AVI')
+                print(f'Skip {path}, not AVI')
                 continue
             browse_lstbox.insert("end", path)
 
     def set_output_directory(self):
+        if self.output_data == None:
+            print("First scan, then set dir")
+            return
         filedir = filedialog.askdirectory()
         self.settings.output_dir.set(filedir)
+        self.scan.scan_output_directory(filedir, self.output_data)
+
 
     # Takes output_file_dict <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def set_scan_results(self, output_lstbox: Listbox, output_file_dict):
@@ -55,7 +60,7 @@ class WindowAction:
 
     def on_scan(self, output_lstbox: Listbox):
         if self.imported_files == None or self.imported_files == []:
-            log_action("No files selected. First browse")
+            print("No files selected. First browse")
             return
         output_file_dict = self.scan.run_scan(self.imported_files)
 
@@ -64,12 +69,12 @@ class WindowAction:
 
     def on_process(self):
         if self.output_data == None:
-            log_action("First scan, then process")
+            print("First scan, then process")
             return
         
-        log_action("Starting process")
+        print("Starting process")
         self.process.run_batch(self.output_data)
-        log_action("Process end")
+        print("Process end")
 
     # def generate_window(self, root):
 

@@ -20,6 +20,12 @@ class Settings:
     def get_test_run(self) -> bool:
         return self.test_run.get()
     
+    def get_use_cache(self) -> bool:
+        return self.use_cache.get()
+
+    def get_save_to_cache(self) -> bool:
+        return self.save_to_cache.get()
+    
     def get_output_dir(self) -> str:
         return self.output_dir.get()
 

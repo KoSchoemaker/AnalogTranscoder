@@ -11,7 +11,7 @@ class Scan:
         self.scan_cache = scan_cache
         self.settings = settings
 
-    # Returns <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
+    # Returns <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_scan(self, filepaths):
         output_file_dict = {}
         for path in filepaths:
@@ -26,23 +26,26 @@ class Scan:
 
         base_filename = self.get_base_filename(filepath)
 
-        cache_pts = self.scan_cache.get_pts_from_external_cache(base_filename)
-        if cache_pts:
-            return cache_pts
-
-        cmd = [
-            "ffprobe", "-v", "error",
-            "-select_streams", "a:0",
-            "-show_packets", "-of", "json", filepath
-        ]
-        out = subprocess.check_output(cmd, text=True)
-        info = json.loads(out)
+        if self.settings.get_use_cache() is True:
+            cache_pts = self.scan_cache.get_pts_from_external_cache(base_filename)
+            if cache_pts:
+                return cache_pts
+        
         pts = []
-        for p in info.get("packets", []):
-            if "pts_time" in p:
-                pts.append(float(p["pts_time"]))
+        if self.settings.get_dry_run() is False:
+            cmd = [
+                "ffprobe", "-v", "error",
+                "-select_streams", "a:0",
+                "-show_packets", "-of", "json", filepath
+            ]
+            out = subprocess.check_output(cmd, text=True)
+            info = json.loads(out)
+            for p in info.get("packets", []):
+                if "pts_time" in p:
+                    pts.append(float(p["pts_time"]))
 
-        self.scan_cache.add_pts_to_external_cache(base_filename, pts)
+            if self.settings.get_save_to_cache() is True:
+                self.scan_cache.add_pts_to_external_cache(base_filename, pts)
         return pts
 
     def find_discontinuities(self, pts_list, gap_threshold=0.2):
@@ -63,7 +66,7 @@ class Scan:
         base_filename = self.get_base_filename(input_filepath)
 
         output_videos = {}
-        log_action(
+        print(
             f"-- {len(cuts)} cut points found, will generate {len(cuts) + 1} video(s).")
 
         begin = None
@@ -94,8 +97,18 @@ class Scan:
         output_filename = create_filename(base_filename, addition, self.settings.extension_string)
         output_videos[output_filename] = {'start_t':begin, "end_t": None, "duration": pts[-1]-begin, "gap_duration": None}
 
-        log_action("Video complete")
+        print("Video complete")
         return output_videos
+    
+    # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
+    def scan_output_directory(self, output_filepath, output_file_dict):
+        output_filenames = [det for _, details in output_file_dict.items() for det in details.keys()]
+        for filename in output_filenames:
+            if os.path.isfile(os.path.join(output_filepath, filename)):
+                print("One or more files already exist in output dir. Select other dir or remove files.")
+                return False
+        print("output directory does not yet contain desired file names")
+        return True
 
     def get_base_filename(self, filepath):
         return os.path.splitext(os.path.basename(filepath))[0]

@@ -3,6 +3,7 @@ from General import *
 from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
+import threading
 
 from WindowAction import WindowAction
 
@@ -33,7 +34,7 @@ class WindowBuilder:
         self.build_scan(master)
         self.build_process(master)
         self.build_progress_bar(master)
-        self.build_logger(master)
+        # self.build_logger(master)
 
         mainloop()
 
@@ -71,10 +72,10 @@ class WindowBuilder:
         settings_frame = Frame(master)
         settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="WE")
 
-        use_cache = Checkbutton(settings_frame, text='Use Cache', var=self.window_action.settings.use_cache, state="disabled")
+        use_cache = Checkbutton(settings_frame, text='Use Cache', var=self.window_action.settings.use_cache)
         use_cache.grid(row=0, column=0, sticky="W")
 
-        save_to_cache = Checkbutton(settings_frame, text='Save to Cache', var=self.window_action.settings.save_to_cache, state="disabled")
+        save_to_cache = Checkbutton(settings_frame, text='Save to Cache', var=self.window_action.settings.save_to_cache)
         save_to_cache.grid(row=1, column=0, sticky="W")
 
         dry_run = Checkbutton(settings_frame, text='dryrun (no actions)', var=self.window_action.settings.dry_run)
@@ -93,7 +94,7 @@ class WindowBuilder:
         self.build_process_settings(lf_process)
         self.build_process_output_dir(lf_process)
 
-        process_button = Button(lf_process, text="Process", command=self.window_action.on_process)
+        process_button = Button(lf_process, text="Process", command=lambda: threading.Thread(target=self.window_action.on_process).start())
         process_button.grid(row=0, column=1, padx=20, pady=20, sticky="WE")
 
     def build_progress_bar(self, master):
@@ -117,10 +118,10 @@ class WindowBuilder:
         output_browse.grid(row=0, column=0, sticky="E")
 
 
-    def build_logger(self, master):
+    # def build_logger(self, master):
 
-        log_lstbox = Listbox(master, width=100, height=5)
-        log_lstbox.grid(row=4, column=0, columnspan=4)
+    #     log_lstbox = Text(master, width=100, height=6, name="log_box")
+    #     log_lstbox.grid(row=4, column=0, padx=self.listbox_pad_x, pady=self.listbox_pad_y, sticky="WE")
 
     def print_filenames(self):
         print(self.imported_files)
