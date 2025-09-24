@@ -62,10 +62,10 @@ class WindowBuilder:
 
         self.build_scan_settings(lf_scan)
 
-        self.output_lstbox = Listbox(lf_scan, width=80, height=15)
+        self.output_lstbox = Listbox(lf_scan, width=80, height=12)
         self.output_lstbox.grid(row=0, column=1, padx=self.listbox_pad_x, pady=self.listbox_pad_y, rowspan=2, sticky="WE")
 
-        scan_button = Button(lf_scan, text="Scan", command=lambda: self.window_action.on_scan(self.output_lstbox))
+        scan_button = Button(lf_scan, text="Scan", command=lambda: threading.Thread(target= lambda: self.window_action.on_scan(self.output_lstbox)).start())
         scan_button.grid(row=1, column=0, padx=20, pady=20, sticky="WE")
 
     def build_scan_settings(self, master):
@@ -78,24 +78,18 @@ class WindowBuilder:
         save_to_cache = Checkbutton(settings_frame, text='Save to Cache', var=self.window_action.settings.save_to_cache)
         save_to_cache.grid(row=1, column=0, sticky="W")
 
-        dry_run = Checkbutton(settings_frame, text='dryrun (no actions)', var=self.window_action.settings.dry_run)
-        dry_run.grid(row=3, column=0, sticky="W")
-
-        test_run = Checkbutton(settings_frame, text='testrun (quick actions)', var=self.window_action.settings.test_run)
-        test_run.grid(row=4, column=0, sticky="W")
-
-
     def build_process(self, master):
         lf_process = LabelFrame(master, text='3: Process to output')
         lf_process.grid(column=0, row=2, padx=self.labelframe_pad_x, pady=self.labelframe_pad_y, sticky="WE")
         lf_process.columnconfigure(0, weight=1)
         lf_process.columnconfigure(1, weight=1)
+        lf_process.columnconfigure(2, weight=1)
 
         self.build_process_settings(lf_process)
         self.build_process_output_dir(lf_process)
 
         process_button = Button(lf_process, text="Process", command=lambda: threading.Thread(target=self.window_action.on_process).start())
-        process_button.grid(row=0, column=1, padx=20, pady=20, sticky="WE")
+        process_button.grid(row=0, column=2, padx=20, pady=20, sticky="WE")
 
     def build_progress_bar(self, master):
         process_progress = ttk.Progressbar(
@@ -106,12 +100,18 @@ class WindowBuilder:
         settings_frame = Frame(master)
         settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="WE")
 
+        dry_run = Checkbutton(settings_frame, text='dryrun (no actions)', var=self.window_action.settings.dry_run)
+        dry_run.grid(row=3, column=0, sticky="W")
+
+        test_run = Checkbutton(settings_frame, text='testrun (quick actions)', var=self.window_action.settings.test_run)
+        test_run.grid(row=4, column=0, sticky="W")
+
         crop_upscale = Checkbutton(settings_frame, text='Crop and upscale from DV', var=self.window_action.settings.crop_upscale, state="disabled")
         crop_upscale.grid(row=0, column=0, sticky="W")
 
     def build_process_output_dir(self, master):
         output_frame = Frame(master)
-        output_frame.grid(row=0, column=0, padx=20, pady=20, sticky="WE")
+        output_frame.grid(row=0, column=1, padx=20, pady=20, sticky="WE")
         output_dir_entry = Entry(output_frame, width=40, textvariable = self.window_action.settings.output_dir, state="disabled")
         output_dir_entry.grid(row=0, column=1, sticky="E", ipadx=4, ipady=4, padx=10)
         output_browse = Button(output_frame, text="Output directory", command=self.window_action.set_output_directory)

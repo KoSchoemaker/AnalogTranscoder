@@ -19,20 +19,20 @@ class Settings:
 
     def get_test_run(self) -> bool:
         return self.test_run.get()
-    
+
     def get_use_cache(self) -> bool:
         return self.use_cache.get()
 
     def get_save_to_cache(self) -> bool:
         return self.save_to_cache.get()
-    
+
     def get_output_dir(self) -> str:
         return self.output_dir.get()
 
     def get_crf(self) -> int:
         if self.test_run.get() == True:
-            return 26
-        return 20
+            return 45
+        return 23
 
     def get_preset_mode(self) -> str:
         if self.test_run.get == True:

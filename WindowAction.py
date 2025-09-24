@@ -23,6 +23,7 @@ class WindowAction:
     def browse(self, browse_lstbox: Listbox):
         filepaths = filedialog.askopenfilenames(filetypes=[("AVI", ".avi")])
         self.imported_files = filepaths
+        browse_lstbox.delete(0,END)
         for path in filepaths:
             if not path.endswith(".avi"):
                 print(f'Skip {path}, not AVI')
@@ -40,8 +41,9 @@ class WindowAction:
 
     # Takes output_file_dict <dict> {input_path:{output_path_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def set_scan_results(self, output_lstbox: Listbox, output_file_dict):
+        output_lstbox.delete(0,END)
         for input_path, item in output_file_dict.items():
-            print(input_path, item)
+            # print(input_path, item)
             output_lstbox.insert(
                 "end", f"{input_path} : {len(item)} output files")
             for output_path, details in item.items():

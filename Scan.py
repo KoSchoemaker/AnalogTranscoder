@@ -31,21 +31,24 @@ class Scan:
             if cache_pts:
                 return cache_pts
         
+        print(f"running ffprobe for {filepath}")
         pts = []
-        if self.settings.get_dry_run() is False:
-            cmd = [
-                "ffprobe", "-v", "error",
-                "-select_streams", "a:0",
-                "-show_packets", "-of", "json", filepath
-            ]
-            out = subprocess.check_output(cmd, text=True)
-            info = json.loads(out)
-            for p in info.get("packets", []):
-                if "pts_time" in p:
-                    pts.append(float(p["pts_time"]))
+        cmd = [
+            "ffprobe", "-v", "error",
+            "-select_streams", "a:0",
+            "-show_packets", "-of", "json", filepath
+        ]
+        out = subprocess.check_output(cmd, text=True)
+        print("ffprobe finished")
+        
+        info = json.loads(out)
+        for p in info.get("packets", []):
+            if "pts_time" in p:
+                pts.append(float(p["pts_time"]))
 
-            if self.settings.get_save_to_cache() is True:
-                self.scan_cache.add_pts_to_external_cache(base_filename, pts)
+        if self.settings.get_save_to_cache() is True:
+            print(f"save result for {filepath} to cache")
+            self.scan_cache.add_pts_to_external_cache(base_filename, pts)
         return pts
 
     def find_discontinuities(self, pts_list, gap_threshold=0.2):
@@ -97,7 +100,7 @@ class Scan:
         output_filename = create_filename(base_filename, addition, self.settings.extension_string)
         output_videos[output_filename] = {'start_t':begin, "end_t": None, "duration": pts[-1]-begin, "gap_duration": None}
 
-        print("Video complete")
+        print(f"{input_filepath} completely scanned")
         return output_videos
     
     # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}

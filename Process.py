@@ -2,6 +2,7 @@ from General import *
 from Settings import Settings
 import ffmpeg
 import os
+import time
 
 
 class Process:
@@ -28,6 +29,8 @@ class Process:
 
         if self.settings.get_dry_run() is False:
             try:
+                start = time.time()
+                print(f"Processing video {input_filepath}: {output_filepath} | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))}")
                 process = (
                     ffmpeg
                     .input(input_filepath, **kwargs)
@@ -45,11 +48,13 @@ class Process:
                     .global_args('-loglevel', 'info')  # Adjust loglevel as needed
                     .run(overwrite_output=False, capture_stdout=True, capture_stderr=True)
                 )
+                end = time.time()
+                print(f"Processing success | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end))}, took {(end - start)/60} min")
             except ffmpeg.Error as e:
                 print(f"Error converting {input_filepath} into {output_filepath}: {e}")
                 print('stdout:', e.stdout.decode('utf8'))
                 print('stderr:', e.stderr.decode('utf8'))
-            return process
+            
 
     # def split_videos(self, input_filepath, cuts, base_name, extension_string):
     #     print(
