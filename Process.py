@@ -1,7 +1,7 @@
 from General import *
 from Settings import Settings
 from Progress import Progress
-import ffmpeg
+from Command import Command
 import os
 import time
 import subprocess
@@ -57,24 +57,9 @@ class Process:
 
             full_cmd = cmd + input_cmd + output_cmd
 
-            try:
-                process = subprocess.Popen(
-                    full_cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,  # merge stderr into stdout
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True
-                )
-                for line in process.stdout:
-                    self.progress.parse_process_progress(line)
-                # process.stdout.close()
-                # process.wait()
-            except subprocess.CalledProcessError as e:
-                print(
-                    f"ERROR: Could not convert {input_filepath} into {output_filepath}: {e}")
-                print(e.output)
-                return
+            process = Command.run(full_cmd)
+            for line in process.stdout:
+                self.progress.parse_process_progress(line)
             
             end = time.time()
             print(

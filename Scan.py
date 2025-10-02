@@ -2,6 +2,7 @@ from General import *
 from ScanCache import ScanCache
 from Settings import Settings
 from Progress import Progress
+from Command import Command
 import json
 import subprocess
 import os
@@ -46,14 +47,8 @@ class Scan:
             "-select_streams", "a:0",
             "-show_packets", "-of", "json", filepath
         ]
-        
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # merge stderr into stdout
-            text=True,
-            bufsize=1,
-            universal_newlines=True)
+
+        process = Command.run(cmd)
 
         out = ""
         for line in process.stdout:
@@ -154,13 +149,7 @@ class Scan:
     
     def get_duration(self, filepath) -> float:
         cmd = ["ffprobe", "-i", filepath]
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # merge stderr into stdout
-            text=True,
-            bufsize=1,
-            universal_newlines=True)
+        process = Command.run(cmd)
         
         out, _ = process.communicate()
         item = self.duration_pattern.search(out)
