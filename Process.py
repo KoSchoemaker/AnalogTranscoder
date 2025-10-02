@@ -20,7 +20,7 @@ class Process:
                 output_filepath = os.path.join(
                     output_directory, output_filename)
                 if os.path.isfile(output_filepath):
-                    print(f'{output_filepath} already exists, skipping')
+                    print(f'INFO: {output_filepath} already exists, skipping')
                     continue
                 self.progress.duration = details['duration']
                 self.process_video(input_path, output_filepath,
@@ -31,7 +31,7 @@ class Process:
         if self.settings.get_dry_run() is False:
             start = time.time()
             print(
-                f"Processing video {input_filepath}: {output_filepath} | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))}")
+                f"INFO: Processing video {input_filepath}: {output_filepath} | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))}")
 
             cmd = [
                 "ffmpeg",
@@ -67,7 +67,7 @@ class Process:
                     universal_newlines=True
                 )
                 for line in process.stdout:
-                    self.progress.parse_progress(line)
+                    self.progress.parse_process_progress(line)
                 # process.stdout.close()
                 # process.wait()
             except subprocess.CalledProcessError as e:

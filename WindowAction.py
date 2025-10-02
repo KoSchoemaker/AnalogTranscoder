@@ -26,13 +26,13 @@ class WindowAction:
         browse_lstbox.delete(0,END)
         for path in filepaths:
             if not path.endswith(".avi"):
-                print(f'Skip {path}, not AVI')
+                print(f'INFO: Skip {path}, not AVI')
                 continue
             browse_lstbox.insert("end", path)
 
     def set_output_directory(self):
         if self.output_data == None:
-            print("First scan, then set dir")
+            print("ACTION: First scan, then set dir")
             return
         filedir = filedialog.askdirectory()
         self.settings.output_dir.set(filedir)
@@ -62,7 +62,7 @@ class WindowAction:
 
     def on_scan(self, output_lstbox: Listbox):
         if self.imported_files == None or self.imported_files == []:
-            print("No files selected. First browse")
+            print("ACTION: No files selected. First browse")
             return
         output_file_dict = self.scan.run_scan(self.imported_files)
 
@@ -71,12 +71,12 @@ class WindowAction:
 
     def on_process(self):
         if self.output_data == None:
-            print("First scan, then process")
+            print("ACTION: First scan, then process")
             return
         
-        print("Starting process")
+        print("INFO: Processing starts...")
         self.process.run_batch(self.output_data)
-        print("Process end")
+        print("INFO: Process ended")
 
     # def generate_window(self, root):
 

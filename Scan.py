@@ -5,6 +5,7 @@ from Progress import Progress
 import json
 import subprocess
 import os
+import re
 
 
 class Scan:
@@ -13,10 +14,14 @@ class Scan:
         self.settings = settings
         self.progress = progress
 
+        self.duration_pattern = re.compile(r'Duration:\s*([\d:.]+)')
+
     # Returns <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_scan(self, filepaths):
         output_file_dict = {}
         for path in filepaths:
+            self.progress.duration = self.get_duration(path)
+
             a_pts = self.get_packet_pts(path)
             a_cuts = self.find_discontinuities(a_pts)
             output_files = self.calculate_output(a_cuts, a_pts, path)
@@ -42,7 +47,6 @@ class Scan:
             "-show_packets", "-of", "json", filepath
         ]
         
-        out = ""
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -51,6 +55,7 @@ class Scan:
             bufsize=1,
             universal_newlines=True)
 
+        out = ""
         for line in process.stdout:
             self.progress.parse_scan_progress(line)
             out += line
@@ -146,3 +151,18 @@ class Scan:
 
     def get_base_filename(self, filepath):
         return os.path.splitext(os.path.basename(filepath))[0]
+    
+    def get_duration(self, filepath) -> float:
+        cmd = ["ffprobe", "-i", filepath]
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # merge stderr into stdout
+            text=True,
+            bufsize=1,
+            universal_newlines=True)
+        
+        out, _ = process.communicate()
+        item = self.duration_pattern.search(out)
+        if item:
+            return timecode_to_sec(item.group(1))
