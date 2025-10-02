@@ -93,7 +93,7 @@ class WindowBuilder:
 
     def build_progress_bar(self, master):
         process_progress = ttk.Progressbar(
-            master, orient=HORIZONTAL, length=100, mode='determinate', maximum=100, variable=self.window_action.progress)
+            master, orient=HORIZONTAL, length=100, mode='determinate', maximum=100, variable=self.window_action.progress.progress_var)
         process_progress.grid(row=3, column=0, padx=20, pady=5, sticky="WE")
 
     def build_process_settings(self, master):

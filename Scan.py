@@ -1,15 +1,17 @@
 from General import *
 from ScanCache import ScanCache
 from Settings import Settings
+from Progress import Progress
 import json
 import subprocess
 import os
 
 
 class Scan:
-    def __init__(self, scan_cache: ScanCache, settings: Settings):
+    def __init__(self, scan_cache: ScanCache, settings: Settings, progress: Progress):
         self.scan_cache = scan_cache
         self.settings = settings
+        self.progress = progress
 
     # Returns <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_scan(self, filepaths):
@@ -27,27 +29,46 @@ class Scan:
         base_filename = self.get_base_filename(filepath)
 
         if self.settings.get_use_cache() is True:
-            cache_pts = self.scan_cache.get_pts_from_external_cache(base_filename)
+            cache_pts = self.scan_cache.get_pts_from_external_cache(
+                base_filename)
             if cache_pts:
                 return cache_pts
-        
-        print(f"running ffprobe for {filepath}")
+
+        print(f"INFO: Running ffprobe for {filepath}")
         pts = []
         cmd = [
             "ffprobe", "-v", "error",
             "-select_streams", "a:0",
             "-show_packets", "-of", "json", filepath
         ]
-        out = subprocess.check_output(cmd, text=True)
-        print("ffprobe finished")
         
+        out = ""
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # merge stderr into stdout
+            text=True,
+            bufsize=1,
+            universal_newlines=True)
+
+        for line in process.stdout:
+            self.progress.parse_scan_progress(line)
+            out += line
+
+        _, err = process.communicate()
+        
+        if process.returncode != 0:
+            print(f'ERROR: ffprobe: {err}')
+        print(f"INFO: ffprobe finished for {filepath}")
+        self.progress.flush_progress()
+
         info = json.loads(out)
         for p in info.get("packets", []):
             if "pts_time" in p:
                 pts.append(float(p["pts_time"]))
 
         if self.settings.get_save_to_cache() is True:
-            print(f"save result for {filepath} to cache")
+            print(f"INFO: Saving result for {filepath} to cache")
             self.scan_cache.add_pts_to_external_cache(base_filename, pts)
         return pts
 
@@ -63,6 +84,10 @@ class Scan:
             if diff < -0.001 or diff > gap_threshold:  # negative = reset, large = gap
                 cuts.append((i, prev, t, diff))
             prev = t
+
+        if len(cuts) == 0:
+            print(
+                f"INFO: No cuts found, biggest frame diff: {diff} (threshold: {gap_threshold})")
         return cuts
 
     def calculate_output(self, cuts, pts, input_filepath):
@@ -70,7 +95,7 @@ class Scan:
 
         output_videos = {}
         print(
-            f"-- {len(cuts)} cut points found, will generate {len(cuts) + 1} video(s).")
+            f"INFO: {len(cuts)} cut points found, will generate {len(cuts) + 1} video(s).")
 
         begin = None
         end = None
@@ -80,7 +105,8 @@ class Scan:
             if begin == None and end == None:
                 output_filename = create_filename(
                     base_filename, addition, self.settings.extension_string)
-                output_videos[output_filename] = {'start_t':None, "end_t": start_t, "duration": start_t, "gap_duration": diff}
+                output_videos[output_filename] = {
+                    'start_t': None, "end_t": start_t, "duration": start_t, "gap_duration": diff}
                 begin = end_t
                 addition += 1
 
@@ -91,26 +117,31 @@ class Scan:
             # subsequent
             output_filename = create_filename(
                 base_filename, addition, self.settings.extension_string)
-            output_videos[output_filename] = {'start_t':begin, "end_t": end, "duration": end-begin, "gap_duration": diff}
+            output_videos[output_filename] = {
+                'start_t': begin, "end_t": end, "duration": end-begin, "gap_duration": diff}
 
             begin = end_t
             addition += 1
 
         # last video
-        output_filename = create_filename(base_filename, addition, self.settings.extension_string)
-        output_videos[output_filename] = {'start_t':begin, "end_t": None, "duration": pts[-1]-begin, "gap_duration": None}
+        output_filename = create_filename(
+            base_filename, addition, self.settings.extension_string)
+        output_videos[output_filename] = {'start_t': begin, "end_t": None,
+                                          "duration": pts[-1]-(begin if begin != None else 0), "gap_duration": None}
 
-        print(f"{input_filepath} completely scanned")
+        print(f"INFO: {input_filepath} completely scanned")
         return output_videos
-    
+
     # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def scan_output_directory(self, output_filepath, output_file_dict):
-        output_filenames = [det for _, details in output_file_dict.items() for det in details.keys()]
+        output_filenames = [det for _, details in output_file_dict.items()
+                            for det in details.keys()]
         for filename in output_filenames:
             if os.path.isfile(os.path.join(output_filepath, filename)):
-                print("One or more files already exist in output dir. Select other dir or remove files.")
+                print(
+                    "ERROR: One or more files already exist in output dir. Select other dir or remove files.")
                 return False
-        print("output directory does not yet contain desired file names")
+        print("INFO: output directory does not yet contain desired file names")
         return True
 
     def get_base_filename(self, filepath):

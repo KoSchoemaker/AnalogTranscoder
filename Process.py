@@ -1,61 +1,92 @@
 from General import *
 from Settings import Settings
+from Progress import Progress
 import ffmpeg
 import os
 import time
+import subprocess
 
 
 class Process:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, progress: Progress):
         self.settings = settings
+        self.progress = progress
 
     # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
     def run_batch(self, output_file_dict):
         output_directory = self.settings.get_output_dir()
         for input_path, item in output_file_dict.items():
             for output_filename, details in item.items():
-                output_filepath = os.path.join(output_directory, output_filename)
+                output_filepath = os.path.join(
+                    output_directory, output_filename)
                 if os.path.isfile(output_filepath):
                     print(f'{output_filepath} already exists, skipping')
                     continue
-                self.process_video(input_path, output_filepath, details["start_t"], details["end_t"])
+                self.progress.duration = details['duration']
+                self.process_video(input_path, output_filepath,
+                                   details["start_t"], details["end_t"])
+                self.progress.flush_progress()
 
     def process_video(self, input_filepath: str, output_filepath: str, begin=None, end=None):
-        kwargs = {}
-        if begin is not None:
-            kwargs['ss'] = begin
-        if end is not None:
-            kwargs['to'] = end
-
         if self.settings.get_dry_run() is False:
+            start = time.time()
+            print(
+                f"Processing video {input_filepath}: {output_filepath} | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))}")
+
+            cmd = [
+                "ffmpeg",
+            ]
+            input_cmd = [
+                "-i", input_filepath,
+            ]
+            output_cmd = [
+                "-vf", "yadif,crop=iw-40:ih-32,scale=960:720",
+                "-vcodec", "libx264",
+                "-preset", self.settings.get_preset_mode(),
+                "-crf", str(self.settings.get_crf()),
+                "-acodec", "aac",
+                "-af", "aresample=async=1000",
+                "-loglevel", "info",
+                output_filepath,
+            ]
+
+            if begin is not None:
+                input_cmd.extend(['-ss', str(begin)])
+            if end is not None:
+                input_cmd.extend(['-to', str(end)])
+
+            full_cmd = cmd + input_cmd + output_cmd
+
             try:
-                start = time.time()
-                print(f"Processing video {input_filepath}: {output_filepath} | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start))}")
-                process = (
-                    ffmpeg
-                    .input(input_filepath, **kwargs)
-                    .output(
-                        output_filepath,
-                        vf='yadif,crop=iw-40:ih-32,scale=960:720',
-                        vcodec='libx264',
-                        preset=self.settings.get_preset_mode(),
-                        crf=self.settings.get_crf(),
-                        acodec="aac",
-                        af="aresample=async=1000",
-                        # avoid_negative_ts="make_zero",
-                        # reset_timestamps=1
-                    )
-                    .global_args('-loglevel', 'info')  # Adjust loglevel as needed
-                    .run(overwrite_output=False, capture_stdout=True, capture_stderr=True)
+                process = subprocess.Popen(
+                    full_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,  # merge stderr into stdout
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
                 )
-                end = time.time()
-                print(f"Processing success | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end))}, took {(end - start)/60} min")
-            except ffmpeg.Error as e:
-                print(f"Error converting {input_filepath} into {output_filepath}: {e}")
-                print('stdout:', e.stdout.decode('utf8'))
-                print('stderr:', e.stderr.decode('utf8'))
+                for line in process.stdout:
+                    self.progress.parse_progress(line)
+                # process.stdout.close()
+                # process.wait()
+            except subprocess.CalledProcessError as e:
+                print(
+                    f"ERROR: Could not convert {input_filepath} into {output_filepath}: {e}")
+                print(e.output)
+                return
+            
+            end = time.time()
+            print(
+                f"INFO: Processing success | {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end))}, took {(end - start)/60} min")
+
             
 
+# def reader(self, process):
+#     for line in process.stdout:
+#         print(line)   # send line to your LogHelper
+#     process.stdout.close()
+#     process.wait()
     # def split_videos(self, input_filepath, cuts, base_name, extension_string):
     #     print(
     #         f"-- {len(cuts)} cut points found, will generate {len(cuts) + 1} video(s).")

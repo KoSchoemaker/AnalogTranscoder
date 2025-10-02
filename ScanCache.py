@@ -13,22 +13,21 @@ class ScanCache:
 
         if os.path.isfile(cache_filepath):
             print(
-                f'INFO: cache file exists for {filename}, using that ({cache_filepath})')
+                f'INFO: Cache file exists for {filename}, using that ({cache_filepath})')
 
             with open(os.path.join(self.cache_directory, filename) + '.json', 'r') as file:
                 return json.load(file)
 
-        print(f'INFO: no cache file exists for {filename}')
+        print(f'INFO: No cache file exists for {filename}')
         return False
 
     def add_pts_to_external_cache(self, filename, pts) -> bool:
         cache_filepath = self.__get_external_cache_filepath(filename)
         if os.path.isfile(cache_filepath):
             print(
-                f'INFO: cache file already exists for {filename}, overwriting')
+                f'INFO: Cache file already exists for {filename}, overwriting')
         with open(cache_filepath, 'w') as file:
             json.dump(pts, file)
 
     def __get_external_cache_filepath(self, filename) -> str:
-        print(f"{self.cache_directory}, {filename}")
         return os.path.join(self.cache_directory, filename) + '.json'

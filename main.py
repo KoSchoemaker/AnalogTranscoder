@@ -15,17 +15,18 @@ root = Tk()
 
 log_lstbox = scrolledtext.ScrolledText(root, width=100, height=6)
 log_lstbox.grid(row=4, column=0, padx=20, pady=5, sticky="WE")
-log_lstbox.yview(END)
+
 
 redir = LogHelper(log_lstbox)
-sys.stdout = redir
-sys.stderr = redir
-
-settings = Settings()
-scan = Scan(ScanCache("pts_cache"), settings)
-process = Process(settings)
 progress = Progress()
+settings = Settings()
+scan = Scan(ScanCache("pts_cache"), settings, progress)
+process = Process(settings, progress)
 
 window_action = WindowAction(scan, process, settings, progress)
 window_builder = WindowBuilder(window_action)
+
+sys.stdout = redir
+sys.stderr = redir
+
 window_builder.generate_window(root)
