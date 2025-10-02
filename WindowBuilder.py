@@ -1,10 +1,8 @@
-from General import *
-
-from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
 import threading
 
+from General import application_name, version
 from WindowAction import WindowAction
 
 
@@ -25,7 +23,7 @@ class WindowBuilder:
 
         master.geometry('1000x750')
         master.resizable(False, False)
-        master.title('DV scaler')
+        master.title(application_name + " v." + version)
 
         master.columnconfigure(0, weight=1)
 

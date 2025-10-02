@@ -1,5 +1,8 @@
 import os
 
+application_name = "DV Scaler"
+version = "1.0"
+
 def sec_to_timecode(sec: float) -> str:
     h = int(sec // 3600)
     m = int((sec % 3600) // 60)

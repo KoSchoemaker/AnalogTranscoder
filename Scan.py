@@ -1,11 +1,12 @@
+import json
+import os
+import re
+
 from General import create_filename, timecode_to_sec, get_base_filename
 from ScanCache import ScanCache
 from Settings import Settings
 from Progress import Progress
 from Command import Command
-import json
-import os
-import re
 
 
 class Scan:

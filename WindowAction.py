@@ -1,8 +1,7 @@
-from General import sec_to_timecode
-
 from tkinter import filedialog
 from tkinter import *
 
+from General import sec_to_timecode
 from Process import Process
 from Scan import Scan
 from Settings import Settings

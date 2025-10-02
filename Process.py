@@ -1,9 +1,9 @@
-from General import *
+import os
+import time
+
 from Settings import Settings
 from Progress import Progress
 from Command import Command
-import os
-import time
 
 
 class Process:

@@ -1,3 +1,6 @@
+from tkinter import Tk
+import sys
+
 from WindowAction import WindowAction
 from WindowBuilder import WindowBuilder
 from Process import Process
@@ -6,9 +9,6 @@ from Settings import Settings
 from ScanCache import ScanCache
 from Progress import Progress
 from LogHelper import LogHelper
-
-from tkinter import Tk
-import sys
 
 root = Tk()
 
