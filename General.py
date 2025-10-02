@@ -1,3 +1,5 @@
+import os
+
 def sec_to_timecode(sec: float) -> str:
     h = int(sec // 3600)
     m = int((sec % 3600) // 60)
@@ -12,3 +14,6 @@ def timecode_to_sec(time_str: str) -> float:
 
 def create_filename(base_name: str, addition: int, extension_string: str) -> str:
     return base_name + "_" + str(addition) + extension_string
+
+def get_base_filename(filepath):
+    return os.path.splitext(os.path.basename(filepath))[0]

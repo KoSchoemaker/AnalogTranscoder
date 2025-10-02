@@ -28,13 +28,11 @@ class WindowBuilder:
         master.title('DV scaler')
 
         master.columnconfigure(0, weight=1)
-        
 
         self.build_browse(master)
         self.build_scan(master)
         self.build_process(master)
         self.build_progress_bar(master)
-        # self.build_logger(master)
 
         mainloop()
 
@@ -44,7 +42,6 @@ class WindowBuilder:
         lf_browse.grid(column=0, row=0, padx=self.labelframe_pad_x, pady=self.labelframe_pad_y, sticky="WE")
         lf_browse.columnconfigure(0, weight=1)
         lf_browse.columnconfigure(1, weight=1)
-        # lf_browse.columnconfigure(2, weight=1)
 
         self.browse_lstbox = Listbox(lf_browse, height=10, width=80)
         self.browse_lstbox.grid(row=0, column=1, padx=self.listbox_pad_x, pady=self.listbox_pad_y, sticky="WE")
@@ -58,7 +55,6 @@ class WindowBuilder:
         lf_scan.grid(column=0, row=1, padx=self.labelframe_pad_x, pady=self.labelframe_pad_y, sticky="WE")
         lf_scan.columnconfigure(0, weight=1)
         lf_scan.columnconfigure(1, weight=1)
-        # lf_scan.columnconfigure(2, weight=3)
 
         self.build_scan_settings(lf_scan)
 
@@ -100,10 +96,10 @@ class WindowBuilder:
         settings_frame = Frame(master)
         settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="WE")
 
-        dry_run = Checkbutton(settings_frame, text='dryrun (no actions)', var=self.window_action.settings.dry_run)
+        dry_run = Checkbutton(settings_frame, text='Dryrun (no actions)', var=self.window_action.settings.dry_run)
         dry_run.grid(row=3, column=0, sticky="W")
 
-        test_run = Checkbutton(settings_frame, text='testrun (quick actions)', var=self.window_action.settings.test_run)
+        test_run = Checkbutton(settings_frame, text='Testrun (quick actions)', var=self.window_action.settings.test_run)
         test_run.grid(row=4, column=0, sticky="W")
 
         crop_upscale = Checkbutton(settings_frame, text='Crop and upscale from DV', var=self.window_action.settings.crop_upscale, state="disabled")
@@ -116,12 +112,3 @@ class WindowBuilder:
         output_dir_entry.grid(row=0, column=1, sticky="E", ipadx=4, ipady=4, padx=10)
         output_browse = Button(output_frame, text="Output directory", command=self.window_action.set_output_directory)
         output_browse.grid(row=0, column=0, sticky="E")
-
-
-    # def build_logger(self, master):
-
-    #     log_lstbox = Text(master, width=100, height=6, name="log_box")
-    #     log_lstbox.grid(row=4, column=0, padx=self.listbox_pad_x, pady=self.listbox_pad_y, sticky="WE")
-
-    def print_filenames(self):
-        print(self.imported_files)

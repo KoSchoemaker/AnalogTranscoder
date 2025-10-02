@@ -1,10 +1,9 @@
-from General import *
+from General import create_filename, timecode_to_sec, get_base_filename
 from ScanCache import ScanCache
 from Settings import Settings
 from Progress import Progress
 from Command import Command
 import json
-import subprocess
 import os
 import re
 
@@ -23,16 +22,37 @@ class Scan:
         for path in filepaths:
             self.progress.duration = self.get_duration(path)
 
-            a_pts = self.get_packet_pts(path)
-            a_cuts = self.find_discontinuities(a_pts)
-            output_files = self.calculate_output(a_cuts, a_pts, path)
+            a_pts = self.__get_packet_pts(path)
+            a_cuts = self.__find_discontinuities(a_pts)
+            output_files = self.__calculate_output(a_cuts, a_pts, path)
             output_file_dict[path] = output_files
 
         return output_file_dict
+    
+    # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
+    def scan_output_directory(self, output_filepath: str, output_file_dict):
+        output_filenames = [det for _, details in output_file_dict.items()
+                            for det in details.keys()]
+        for filename in output_filenames:
+            if os.path.isfile(os.path.join(output_filepath, filename)):
+                print(
+                    "ERROR: One or more files already exist in output dir. Select other dir or remove files.")
+                return False
+        print("INFO: output directory does not yet contain desired file names")
+        return True
 
-    def get_packet_pts(self, filepath):
+    def get_duration(self, filepath: str) -> float:
+        cmd = ["ffprobe", "-i", filepath]
+        process = Command.run(cmd)
 
-        base_filename = self.get_base_filename(filepath)
+        out, _ = process.communicate()
+        item = self.duration_pattern.search(out)
+        if item:
+            return timecode_to_sec(item.group(1))
+
+    def __get_packet_pts(self, filepath: str):
+
+        base_filename = get_base_filename(filepath)
 
         if self.settings.get_use_cache() is True:
             cache_pts = self.scan_cache.get_pts_from_external_cache(
@@ -56,7 +76,7 @@ class Scan:
             out += line
 
         _, err = process.communicate()
-        
+
         if process.returncode != 0:
             print(f'ERROR: ffprobe: {err}')
         print(f"INFO: ffprobe finished for {filepath}")
@@ -72,8 +92,7 @@ class Scan:
             self.scan_cache.add_pts_to_external_cache(base_filename, pts)
         return pts
 
-    def find_discontinuities(self, pts_list, gap_threshold=0.2):
-        # returns indices where a gap or negative jump occurs
+    def __find_discontinuities(self, pts_list, gap_threshold=0.2):
         cuts = []
         prev = None
         for i, t in enumerate(pts_list):
@@ -90,8 +109,8 @@ class Scan:
                 f"INFO: No cuts found, biggest frame diff: {diff} (threshold: {gap_threshold})")
         return cuts
 
-    def calculate_output(self, cuts, pts, input_filepath):
-        base_filename = self.get_base_filename(input_filepath)
+    def __calculate_output(self, cuts, pts, input_filepath: str):
+        base_filename = get_base_filename(input_filepath)
 
         output_videos = {}
         print(
@@ -101,7 +120,7 @@ class Scan:
         end = None
         addition = 1
         for frame, start_t, end_t, diff in cuts:
-            # first video
+            # First video
             if begin == None and end == None:
                 output_filename = create_filename(
                     base_filename, addition, self.settings.extension_string)
@@ -114,7 +133,7 @@ class Scan:
 
             end = start_t
 
-            # subsequent
+            # Subsequent
             output_filename = create_filename(
                 base_filename, addition, self.settings.extension_string)
             output_videos[output_filename] = {
@@ -123,7 +142,7 @@ class Scan:
             begin = end_t
             addition += 1
 
-        # last video
+        # Last video
         output_filename = create_filename(
             base_filename, addition, self.settings.extension_string)
         output_videos[output_filename] = {'start_t': begin, "end_t": None,
@@ -131,27 +150,3 @@ class Scan:
 
         print(f"INFO: {input_filepath} completely scanned")
         return output_videos
-
-    # Takes output_file_dict <dict> {input_path:{output_filename_N:{'start_t', "end_t", "duration", "gap_duration"}...}...}
-    def scan_output_directory(self, output_filepath, output_file_dict):
-        output_filenames = [det for _, details in output_file_dict.items()
-                            for det in details.keys()]
-        for filename in output_filenames:
-            if os.path.isfile(os.path.join(output_filepath, filename)):
-                print(
-                    "ERROR: One or more files already exist in output dir. Select other dir or remove files.")
-                return False
-        print("INFO: output directory does not yet contain desired file names")
-        return True
-
-    def get_base_filename(self, filepath):
-        return os.path.splitext(os.path.basename(filepath))[0]
-    
-    def get_duration(self, filepath) -> float:
-        cmd = ["ffprobe", "-i", filepath]
-        process = Command.run(cmd)
-        
-        out, _ = process.communicate()
-        item = self.duration_pattern.search(out)
-        if item:
-            return timecode_to_sec(item.group(1))
