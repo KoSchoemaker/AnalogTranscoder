@@ -148,5 +148,4 @@ class Scan:
         output_videos[output_filename] = {'start_t': begin, "end_t": None,
                                           "duration": pts[-1]-(begin if begin != None else 0), "gap_duration": None}
 
-        print(f"INFO: {input_filepath} completely scanned")
         return output_videos
